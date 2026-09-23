@@ -1,0 +1,32 @@
+# --- Python environment and build files ---
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# --- Secrets ---
+.env
+
+# --- Tool caches ---
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# --- Data (tracked by DVC later, never by git) ---
+/data/
+
+# --- Model weights and experiment outputs ---
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+mlruns/
+mlartifacts/
+
+# --- Editor and operating system files ---
+.vscode/
+Thumbs.db
+.DS_Store
