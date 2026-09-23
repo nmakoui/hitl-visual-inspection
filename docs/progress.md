@@ -18,5 +18,6 @@ helper function (normalise_confidence) with three passing tests;
 added a README stub.
 Results: ruff check . -> All checks passed. pytest -v -> 3 passed.
 Issues / limitations: None yet.
-Next: Create the GitHub repository and push (Task 1, step 8), then
-begin Task 2: download MVTec AD and write the data loader.
+Repository pushed to https://github.com/nmakoui/hitl-visual-inspection.
+Next: Begin Task 2: download MVTec AD, choose 4-6 categories, write a
+data loader.
