@@ -22,42 +22,30 @@ Repository pushed to https://github.com/nmakoui/hitl-visual-inspection.
 Next: Begin Task 2: download MVTec AD, choose 4-6 categories, write a
 data loader.
 
-### 2026-09-23 - Phase 1, Task 2: Category selection
-Done: Chose 5 MVTec AD categories to use for this project: bottle,
-hazelnut, screw, capsule, metal_nut. Chosen for defect-type variety
-(3-5 defect types each) and to cover different object geometries
-(bottles, natural/organic hazelnut texture, small elongated screws,
-capsules, rotatable metal nuts), while keeping to smaller/medium-
+### 2026-09-23/24 - Phase 1, Task 2: Category selection, dataset download, data loader
+Done: Chose 5 MVTec AD categories: bottle, hazelnut, screw, capsule,
+metal_nut - selected for defect-type variety (3-5 defect types each)
+and a mix of object geometries, while keeping to smaller/medium-
 resolution object categories rather than the largest texture
-categories (carpet, wood, tile, leather).
-
-### 2026-09-24 - Phase 1, Task 2: Dataset download and category selection
-Done: Downloaded the full MVTec AD dataset (5.27 GB) via the Kaggle
-API into data/raw/mvtec_ad/. Chose 5 categories to use for this
-project: bottle, hazelnut, screw, capsule, metal_nut - selected for
-defect-type variety (3-5 defect types each) and a mix of object
-geometries, while keeping to smaller/medium-resolution object
-categories rather than the largest texture categories (carpet, wood,
-tile, leather). Wrote configs/datasets.yaml recording the category
-list, and src/inspection/datasets.py with list_mvtec_samples(), which
-lists every image for a given category and split and attaches the
-matching ground-truth mask path for defective test images. Wrote
-4 unit tests using a synthetic in-memory folder structure (pytest's
-tmp_path fixture), all passing.
+categories (carpet, wood, tile, leather). Downloaded the full MVTec
+AD dataset (5.27 GB) via the Kaggle API into data/raw/mvtec_ad/.
+Wrote configs/datasets.yaml recording the category list, and
+src/inspection/datasets.py with list_mvtec_samples(), which lists
+every image for a given category and split and attaches the matching
+ground-truth mask path for defective test images. Wrote 4 unit tests
+using a synthetic in-memory folder structure (pytest's tmp_path
+fixture), all passing.
 Results: Real image counts per category (train / test):
 bottle 209/83, hazelnut 391/110, screw 320/160, capsule 219/132,
 metal_nut 220/115. Total: 1,359 train images, 600 test images across
-the 5 categories. ruff check . -> All checks passed. pytest -v ->
-7 passed.
-Issues / limitations: Initial full-dataset download attempts were
-interrupted twice by laptop sleep/hibernate; resolved by disabling
-sleep while plugged in. The other 10 MVTec AD categories were
-downloaded but are unused by this project.
+the 5 categories (1,959 total). ruff check . -> All checks passed.
+pytest -v -> 7 passed.
+Issues / limitations: Initial full-dataset download (5.27 GB via
+Kaggle) was interrupted twice by laptop sleep/hibernate; resolved by
+disabling sleep while plugged in. The other 10 MVTec AD categories
+were downloaded but are unused by this project.
 Next: Phase 1, Task 3 - extract DINOv2 and CLIP image embeddings for
 these 1,959 images.
-Issues / limitations: Initial full-dataset download (5.27 GB via
-Kaggle) was interrupted twice by laptop sleep; restarted with sleep
-disabled.
 
 ### 2026-09-24 - Phase 1, Task 3: DINOv2 and CLIP embedding extraction
 Done: Installed torch (CPU build), torchvision, and transformers. Wrote
@@ -131,3 +119,34 @@ because these are far from the everyday photo captions CLIP was
 originally trained on. This is a genuine, documented limitation, not
 a bug in the retrieval code.
 Next: Phase 1, Task 6 - FastAPI /similar endpoint.
+
+### 2026-09-24 - Phase 1, Task 6: FastAPI /similar endpoint
+Done: Added embed_pil_image_dinov2() and embed_text_clip() to
+embeddings.py (refactored embed_image_dinov2 to reuse the PIL-based
+version). Wrote src/inspection/api/main.py: a FastAPI app with /health
+and /similar (upload an image, get top-k similar cases via DINOv2,
+the stronger embedding per Task 5's evaluation). Model loads once at
+startup via FastAPI's lifespan, not per request. Wrote 3 tests using
+FastAPI's TestClient (health check, real similarity search through
+the full request cycle, rejection of non-image files). Manually
+verified the interactive /docs page in a browser.
+Results: All 14 project tests pass. ruff check . -> All checks
+passed. Real database still holds exactly 1,959 rows after the full
+test suite runs.
+Issues / limitations: Found and fixed two real bugs from this task:
+(1) tests/test_vector_store.py and tests/test_evaluation.py were
+dropping the real, shared "images" table as part of their fixtures,
+breaking production data every time the full suite ran - fixed by
+giving every table-touching function (create_tables, find_similar,
+add_hnsw_indexes, evaluate_retrieval) an explicit table_name
+parameter, defaulting to "images" for real use and overridden to
+"test_images" only in test files, so tests are now fully isolated
+from production data. (2) The reload script (vector_store.py's
+__main__ block) only ever inserted rows with no way to clear old
+data first, so re-running it after any earlier partial run left
+duplicate rows (1961 instead of 1959) - fixed by adding
+TRUNCATE TABLE images before every reload, making it safe to re-run
+any number of times.
+Next: Phase 1, Task 7 - Hugging Face Space (public demo), using
+FAISS or an in-memory index since a Space cannot reach the local
+Postgres database.
