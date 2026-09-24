@@ -84,3 +84,32 @@ directly into embeddings.py via os.environ.setdefault() so it
 applies automatically in any environment, including Colab later.
 Next: Phase 1, Task 4 - run PostgreSQL with pgvector in Docker, load
 these embeddings, add an HNSW index and a similarity query.
+
+### 2026-09-24 - Phase 1, Task 4-5: pgvector storage and retrieval evaluation
+Done: Set up PostgreSQL with pgvector via Docker Compose
+(docker-compose.yml, configs/init_db.sql). Wrote
+src/inspection/retrieval/vector_store.py: creates an images table
+(category, split, defect_type, image_path, dinov2_embedding vector(768),
+clip_embedding vector(512)), loads Task 3's embeddings into it, adds
+HNSW indexes (vector_cosine_ops) on both embedding columns, and a
+find_similar() cosine-distance query with optional self-exclusion.
+Wrote src/inspection/retrieval/evaluation.py: evaluate_retrieval()
+computes mean precision@k and recall@k per the project's definition
+of a hit (same category and defect_type), using every image in the
+dataset as a query in turn. Wrote round-trip tests against the real
+local Postgres for both modules.
+Results: All 1,959 images loaded and indexed. Evaluation at k=5,
+1,959 queries evaluated (0 skipped) for both embedding types:
+DINOv2 - mean precision@5 = 0.8134, mean recall@5 = 0.0293.
+CLIP - mean precision@5 = 0.7836, mean recall@5 = 0.0265.
+DINOv2 outperforms CLIP on both metrics for this dataset. ruff check .
+-> All checks passed. pytest -v -> 11 passed.
+Issues / limitations: Recall@k is structurally very low here because
+"good" (defect-free) images dominate the dataset in large groups
+(e.g. hundreds of hazelnut "good" images), so even a perfect top-5
+scores recall = 5/(large group size). Precision@5 is the more
+informative metric for this dataset's class balance. pgvector's
+Python Vector wrapper needed .to_numpy() to convert back to a plain
+array - not a raw list/array as initially assumed.
+Next: try CLIP's zero-shot text-to-image search as the PDF's
+suggested extra, then FastAPI /similar endpoint (Task 6).
