@@ -115,3 +115,20 @@ if __name__ == "__main__":
         output_dir=Path("data/processed/embeddings"),
     )
     print("Done. Saved to data/processed/embeddings/")
+
+def embed_text_clip(text: str, model, processor) -> np.ndarray:
+    """Return a CLIP text embedding vector (512-d) for a plain-text query."""
+    inputs = processor(text=[text], return_tensors="pt", padding=True)
+    with torch.no_grad():
+        outputs = model.get_text_features(**inputs)
+
+    if isinstance(outputs, torch.Tensor):
+        embedding = outputs
+    elif hasattr(outputs, "text_embeds"):
+        embedding = outputs.text_embeds
+    elif hasattr(outputs, "pooler_output"):
+        embedding = outputs.pooler_output
+    else:
+        raise TypeError(f"Unexpected output type from get_text_features: {type(outputs)}")
+
+    return embedding.squeeze().numpy()
