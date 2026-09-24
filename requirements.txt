@@ -9,3 +9,5 @@ numpy
 torchvision
 pyyaml
 tqdm
+psycopg[binary]
+pgvector
