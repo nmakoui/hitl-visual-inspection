@@ -25,10 +25,10 @@ def get_connection() -> psycopg.Connection:
     return conn
 
 
-def create_tables(conn: psycopg.Connection) -> None:
+def create_tables(conn: psycopg.Connection, table_name: str = "images") -> None:
     """Create the images table, with vector columns for both embedding types."""
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS images (
+    conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS {table_name} (
             id SERIAL PRIMARY KEY,
             category TEXT NOT NULL,
             split TEXT NOT NULL,
@@ -74,25 +74,18 @@ def load_embeddings(conn: psycopg.Connection, embeddings_dir: Path) -> int:
     return len(rows)
 
 
-def add_hnsw_indexes(conn: psycopg.Connection) -> None:
+def add_hnsw_indexes(conn: psycopg.Connection, table_name: str = "images") -> None:
     """Add HNSW approximate-nearest-neighbour indexes for both embedding columns."""
     conn.execute(
-        "CREATE INDEX IF NOT EXISTS dinov2_hnsw_idx "
-        "ON images USING hnsw (dinov2_embedding vector_cosine_ops);"
+        f"CREATE INDEX IF NOT EXISTS {table_name}_dinov2_hnsw_idx "
+        f"ON {table_name} USING hnsw (dinov2_embedding vector_cosine_ops);"
     )
     conn.execute(
-        "CREATE INDEX IF NOT EXISTS clip_hnsw_idx "
-        "ON images USING hnsw (clip_embedding vector_cosine_ops);"
+        f"CREATE INDEX IF NOT EXISTS {table_name}_clip_hnsw_idx "
+        f"ON {table_name} USING hnsw (clip_embedding vector_cosine_ops);"
     )
     conn.commit()
 
-
-if __name__ == "__main__":
-    conn = get_connection()
-    create_tables(conn)
-    n = load_embeddings(conn, Path("data/processed/embeddings"))
-    add_hnsw_indexes(conn)
-    print(f"Loaded {n} rows and created HNSW indexes.")
 
 def find_similar(
     conn: psycopg.Connection,
@@ -100,6 +93,7 @@ def find_similar(
     column: str,
     k: int = 5,
     exclude_id: int | None = None,
+    table_name: str = "images",
 ) -> list[dict]:
     """Return the k most similar images to the given embedding vector.
 
@@ -121,7 +115,7 @@ def find_similar(
         f"""
         SELECT id, category, split, defect_type, image_path,
                {column} <=> %s AS distance
-        FROM images
+        FROM {table_name}
         {where_clause}
         ORDER BY {column} <=> %s
         LIMIT %s
@@ -131,3 +125,13 @@ def find_similar(
 
     columns = ["id", "category", "split", "defect_type", "image_path", "distance"]
     return [dict(zip(columns, row, strict=True)) for row in rows]
+
+
+if __name__ == "__main__":
+    conn = get_connection()
+    create_tables(conn)
+    conn.execute("TRUNCATE TABLE images;")
+    conn.commit()
+    n = load_embeddings(conn, Path("data/processed/embeddings"))
+    add_hnsw_indexes(conn)
+    print(f"Loaded {n} rows and created HNSW indexes.")

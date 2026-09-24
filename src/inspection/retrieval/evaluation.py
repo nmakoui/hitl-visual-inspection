@@ -8,15 +8,17 @@ import psycopg
 from inspection.retrieval.vector_store import find_similar
 
 
-def _fetch_all_rows(conn: psycopg.Connection) -> list[dict]:
+def _fetch_all_rows(conn: psycopg.Connection, table_name: str = "images") -> list[dict]:
     rows = conn.execute(
-        "SELECT id, category, defect_type, dinov2_embedding, clip_embedding FROM images"
+        f"SELECT id, category, defect_type, dinov2_embedding, clip_embedding FROM {table_name}"
     ).fetchall()
     columns = ["id", "category", "defect_type", "dinov2_embedding", "clip_embedding"]
     return [dict(zip(columns, row, strict=True)) for row in rows]
 
 
-def evaluate_retrieval(conn: psycopg.Connection, column: str, k: int = 5) -> dict:
+def evaluate_retrieval(
+    conn: psycopg.Connection, column: str, k: int = 5, table_name: str = "images"
+) -> dict:
     """Compute mean precision@k and recall@k for one embedding column.
 
     A "hit" is a retrieved image sharing the same category and defect_type
@@ -25,7 +27,7 @@ def evaluate_retrieval(conn: psycopg.Connection, column: str, k: int = 5) -> dic
     (category, defect_type) group has no other member besides itself are
     skipped, since recall is undefined with zero relevant items.
     """
-    rows = _fetch_all_rows(conn)
+    rows = _fetch_all_rows(conn, table_name)
 
     group_counts: dict[tuple[str, str], int] = defaultdict(int)
     for row in rows:
@@ -43,7 +45,9 @@ def evaluate_retrieval(conn: psycopg.Connection, column: str, k: int = 5) -> dic
             continue
 
         query_embedding = row[column].to_numpy()
-        results = find_similar(conn, query_embedding, column, k=k, exclude_id=row["id"])
+        results = find_similar(
+            conn, query_embedding, column, k=k, exclude_id=row["id"], table_name=table_name
+        )
 
         hits = sum(
             1

@@ -8,11 +8,11 @@ from inspection.retrieval.vector_store import create_tables, get_connection
 @pytest.fixture
 def conn():
     connection = get_connection()
-    connection.execute("DROP TABLE IF EXISTS images;")
+    connection.execute("DROP TABLE IF EXISTS test_images;")
     connection.commit()
-    create_tables(connection)
+    create_tables(connection, table_name="test_images")
     yield connection
-    connection.execute("DROP TABLE IF EXISTS images;")
+    connection.execute("DROP TABLE IF EXISTS test_images;")
     connection.commit()
     connection.close()
 
@@ -21,7 +21,7 @@ def _insert(conn, category, defect_type, vec):
     dummy_clip = np.zeros(512, dtype=np.float32)
     conn.execute(
         """
-        INSERT INTO images (category, split, defect_type, image_path,
+        INSERT INTO test_images (category, split, defect_type, image_path,
                              dinov2_embedding, clip_embedding)
         VALUES (%s, 'test', %s, 'fake.png', %s, %s)
         """,
@@ -39,7 +39,7 @@ def test_evaluate_retrieval_recall_and_precision(conn):
     # One unrelated image, far away, alone in its own group.
     _insert(conn, "hazelnut", "crack", -base)
 
-    result = evaluate_retrieval(conn, "dinov2_embedding", k=2)
+    result = evaluate_retrieval(conn, "dinov2_embedding", k=2, table_name="test_images")
 
     assert result["num_queries_evaluated"] == 3
     assert result["num_queries_skipped"] == 1
