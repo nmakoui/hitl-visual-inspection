@@ -31,14 +31,19 @@ def load_clip():
     return model, processor
 
 
-def embed_image_dinov2(image_path: Path, model, processor) -> np.ndarray:
-    """Return a single DINOv2 embedding vector (768-d) for one image."""
-    image = Image.open(image_path).convert("RGB")
+def embed_pil_image_dinov2(image: Image.Image, model, processor) -> np.ndarray:
+    """Return a single DINOv2 embedding vector (768-d) for an already-loaded image."""
     inputs = processor(images=image, return_tensors="pt")
     with torch.no_grad():
         outputs = model(**inputs)
     # The [CLS] token (position 0) is DINOv2's standard image-level summary vector.
     return outputs.last_hidden_state[:, 0, :].squeeze().numpy()
+
+
+def embed_image_dinov2(image_path: Path, model, processor) -> np.ndarray:
+    """Return a single DINOv2 embedding vector (768-d) for one image on disk."""
+    image = Image.open(image_path).convert("RGB")
+    return embed_pil_image_dinov2(image, model, processor)
 
 
 def embed_image_clip(image_path: Path, model, processor) -> np.ndarray:

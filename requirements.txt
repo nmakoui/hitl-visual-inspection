@@ -11,3 +11,6 @@ pyyaml
 tqdm
 psycopg[binary]
 pgvector
+fastapi
+uvicorn[standard]
+python-multipart
