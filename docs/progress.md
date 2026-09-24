@@ -113,3 +113,21 @@ Python Vector wrapper needed .to_numpy() to convert back to a plain
 array - not a raw list/array as initially assumed.
 Next: try CLIP's zero-shot text-to-image search as the PDF's
 suggested extra, then FastAPI /similar endpoint (Task 6).
+
+### 2026-09-24 - Phase 1, Task 5 (extra): CLIP zero-shot text-to-image search
+Done: Added embed_text_clip() to embeddings.py and a small demo script
+(text_search_demo.py) trying 3 plain-text queries against the indexed
+clip_embedding column - a capability only CLIP has, since DINOv2 has
+no text understanding.
+Results: "crack in capsule" -> correctly top-matched capsule/crack.
+"scratch on metal nut" -> top match was screw/manipulated_front (wrong
+category and defect). "broken bottle" -> top match was metal_nut/flip
+(wrong category and defect). 1 of 3 zero-shot queries hit the correct
+category.
+Issues / limitations: CLIP's zero-shot text search does not
+generalise well to this dataset's specific industrial vocabulary
+(screws, metal nuts, capsules) and defect terminology - plausibly
+because these are far from the everyday photo captions CLIP was
+originally trained on. This is a genuine, documented limitation, not
+a bug in the retrieval code.
+Next: Phase 1, Task 6 - FastAPI /similar endpoint.
