@@ -1,3 +1,11 @@
 pytest
 ruff
 python-dotenv
+kaggle
+torch
+transformers
+pillow
+numpy
+torchvision
+pyyaml
+tqdm
