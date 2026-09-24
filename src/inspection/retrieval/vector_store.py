@@ -95,24 +95,38 @@ if __name__ == "__main__":
     print(f"Loaded {n} rows and created HNSW indexes.")
 
 def find_similar(
-    conn: psycopg.Connection, embedding: np.ndarray, column: str, k: int = 5
+    conn: psycopg.Connection,
+    embedding: np.ndarray,
+    column: str,
+    k: int = 5,
+    exclude_id: int | None = None,
 ) -> list[dict]:
     """Return the k most similar images to the given embedding vector.
 
     `column` must be either "dinov2_embedding" or "clip_embedding".
+    Pass `exclude_id` to leave one row (typically the query image itself,
+    during evaluation) out of the results.
     """
     if column not in ("dinov2_embedding", "clip_embedding"):
         raise ValueError(f"Unknown embedding column: {column}")
+
+    where_clause = "WHERE id != %s" if exclude_id is not None else ""
+    params = [embedding]
+    if exclude_id is not None:
+        params.append(exclude_id)
+    params.append(embedding)
+    params.append(k)
 
     rows = conn.execute(
         f"""
         SELECT id, category, split, defect_type, image_path,
                {column} <=> %s AS distance
         FROM images
+        {where_clause}
         ORDER BY {column} <=> %s
         LIMIT %s
         """,
-        (embedding, embedding, k),
+        params,
     ).fetchall()
 
     columns = ["id", "category", "split", "defect_type", "image_path", "distance"]
