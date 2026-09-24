@@ -58,5 +58,29 @@ these 1,959 images.
 Issues / limitations: Initial full-dataset download (5.27 GB via
 Kaggle) was interrupted twice by laptop sleep; restarted with sleep
 disabled.
-Next: confirm download completed, then write the config listing
-these categories and the data loader.
+
+### 2026-09-24 - Phase 1, Task 3: DINOv2 and CLIP embedding extraction
+Done: Installed torch (CPU build), torchvision, and transformers. Wrote
+src/inspection/retrieval/embeddings.py with load/embed functions for
+both DINOv2 (facebook/dinov2-base) and CLIP (openai/clip-vit-base-
+patch32), plus extract_dataset_embeddings() which embeds every image
+across the 5 chosen categories and saves results to
+data/processed/embeddings/. Wrote 2 unit tests checking embedding
+shapes. Ran extraction on all 1,959 images with both models.
+Results: dinov2_embeddings.npy shape (1959, 768); clip_embeddings.npy
+shape (1959, 512); metadata.csv has 1960 lines (1959 + header).
+File sizes: dinov2 6,018,176 bytes, clip 4,012,160 bytes, metadata
+138,721 bytes. Full extraction run took 42m50s on CPU. ruff check .
+-> All checks passed. pytest -v -> 9 passed in 76.62s.
+Issues / limitations: Hit two real bugs from using very recent
+library versions (transformers 5.17.0): (1) AutoImageProcessor
+required torchvision, not installed by default - fixed by adding it.
+(2) CLIPModel.get_image_features() now returns a wrapped output
+object instead of a raw tensor - fixed by unwrapping .image_embeds/
+.pooler_output defensively. Also hit repeated download failures
+(Hugging Face's newer "Xet" transfer backend failing on an unstable
+connection) - fixed by setting HF_HUB_DISABLE_XET=1, now baked
+directly into embeddings.py via os.environ.setdefault() so it
+applies automatically in any environment, including Colab later.
+Next: Phase 1, Task 4 - run PostgreSQL with pgvector in Docker, load
+these embeddings, add an HNSW index and a similarity query.
