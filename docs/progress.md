@@ -150,3 +150,34 @@ any number of times.
 Next: Phase 1, Task 7 - Hugging Face Space (public demo), using
 FAISS or an in-memory index since a Space cannot reach the local
 Postgres database.
+
+### 2026-10-01 - Phase 1, Task 7: Hugging Face Space demo (built, not publicly hosted)
+Done: Built a 192-image subset (src/inspection/space/prepare_subset.py)
+spread across the 5 categories with a mix of good/defective examples
+per defect type, with a FAISS IndexFlatL2 index over their DINOv2
+embeddings. Wrote a fully self-contained Gradio app
+(src/inspection/space/app.py) - no dependency on the project's own
+"inspection" package - that embeds an uploaded image with DINOv2 and
+searches the subset via FAISS, returning a gallery of similar past
+cases. Added a Space-specific requirements.txt (only the packages
+app.py itself needs) and a README.md with Hugging Face Space
+frontmatter (title, sdk: gradio, app_file, etc). Fixed a bug where
+the embedding call was accidentally dropped from prepare_subset.py
+during an earlier edit (the already-built subset was unaffected,
+since it was generated before the bug was introduced).
+Results: Selected 192 images across all 5 categories with varied
+defect types. Verified working via local Gradio server
+(python -m inspection.space.app) - uploaded images and example clicks
+correctly return a gallery of visually similar past cases (e.g. a
+metal_nut image correctly matched to other metal_nut results).
+Issues / limitations: Hugging Face changed its policy in 2026 so that
+Gradio and Docker Spaces now require a paid PRO subscription to
+create; only Static Spaces remain free (confirmed via Hugging Face's
+own Spaces documentation). As a result, this demo is not currently
+hosted as a live public Space - it runs correctly locally but is not
+deployed, a budget-based decision rather than a technical limitation.
+Publishing a fine-tuned model with a model card (Phase 2) and a
+dataset with a dataset card (Phase 4) remain free and will still
+provide genuine Hugging Face Hub engagement for this project.
+Next: Phase 1, Task 8 - final tests and README results table (closes
+out Phase 1).
