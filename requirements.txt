@@ -14,3 +14,5 @@ pgvector
 fastapi
 uvicorn[standard]
 python-multipart
+faiss-cpu
+gradio
