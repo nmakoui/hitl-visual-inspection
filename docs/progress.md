@@ -181,3 +181,28 @@ dataset with a dataset card (Phase 4) remain free and will still
 provide genuine Hugging Face Hub engagement for this project.
 Next: Phase 1, Task 8 - final tests and README results table (closes
 out Phase 1).
+
+
+## Phase 2 - Detection, anomaly detection, segmentation and explainability
+
+### 2026-09-27 - Phase 2, Task 1 (step 1 of 8): MLflow tracking server
+Done: Added mlflow to requirements.txt. Started a local MLflow tracking
+server (mlflow server --host 127.0.0.1 --port 5000), using the default
+file-based backend store and artifact store (mlruns/, mlartifacts/ -
+already git-ignored since Phase 1 setup). Logged a test parameter and
+metric from a standalone Python call to confirm the connection works
+end-to-end before any real training starts.
+Results: Confirmed in the MLflow UI (under the "Model training" view,
+not the newer GenAI/Tracing view) - experiment "connection-test", run
+"youthful-fox-125", showing test_param=42 and test_metric=0.95,
+status Finished.
+Issues / limitations: MLflow 3.x's UI defaults to a "GenAI" tracing
+view rather than the classic experiment-tracking view; the toggle
+for "Model training" (top-left) must be used for this project's
+purposes. No Docker/database needed for this - a plain local server
+is enough at this stage; the full Docker Compose stack (API,
+Postgres, MLflow, review UI together) is a Phase 4 task, not needed
+yet.
+Next: Phase 2, Task 1 (step 2 of 8) - convert NEU-DET to COCO format,
+fine-tune RT-DETR (or DETR) with transformers, train a YOLO baseline
+for comparison.
