@@ -206,3 +206,26 @@ yet.
 Next: Phase 2, Task 1 (step 2 of 8) - convert NEU-DET to COCO format,
 fine-tune RT-DETR (or DETR) with transformers, train a YOLO baseline
 for comparison.
+
+### 2026-09-27 - Phase 2, Task 1 (step 2 of 8, part 1): NEU-DET to COCO conversion
+Done: Downloaded NEU-DET (kaustubhdikshit/neu-surface-defect-database
+on Kaggle, 20k+ downloads, highest-voted version) into
+data/raw/neu_det/ - standard PASCAL VOC layout (XML annotations,
+train/validation split, 6 defect classes). Wrote configs/neu_det.yaml
+recording the 6 category names in a fixed order. Wrote
+src/inspection/detection/coco_conversion.py: parse_voc_annotation()
+parses one VOC XML file, build_coco_dataset() builds a full
+COCO-format dict for a directory of XML files, converting VOC's
+[xmin, ymin, xmax, ymax] boxes to COCO's [x, y, width, height]. Wrote
+2 unit tests against a known fake XML string, specifically checking
+the bbox coordinate conversion is correct (not just that it runs).
+Ran the converter on both real splits.
+Results: train: 1,439 images, 3,332 annotations. validation: 361
+images, 857 annotations. Total 1,800 images (matches NEU-DET's known
+300-images-per-class x 6-classes size). ~2.3 annotations/image in
+both splits. Spot-checked the first real image/annotation against
+the raw XML - matches exactly. ruff check . -> All checks passed.
+pytest -v -> 17 passed.
+Issues / limitations: None.
+Next: Phase 2, Task 1 (step 2 of 8, part 2) - fine-tune RT-DETR with
+transformers' Trainer on this COCO-format data, logging to MLflow.
